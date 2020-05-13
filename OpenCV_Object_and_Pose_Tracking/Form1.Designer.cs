@@ -210,7 +210,7 @@
             this.groupBox5.Controls.Add(this.ShowHideBoundsBtn);
             this.groupBox5.Location = new System.Drawing.Point(12, 304);
             this.groupBox5.Name = "groupBox5";
-            this.groupBox5.Size = new System.Drawing.Size(275, 336);
+            this.groupBox5.Size = new System.Drawing.Size(280, 336);
             this.groupBox5.TabIndex = 5;
             this.groupBox5.TabStop = false;
             this.groupBox5.Text = "Model Capture";
@@ -358,6 +358,7 @@
             this.StartTrackingBtn.TabIndex = 7;
             this.StartTrackingBtn.Text = "Start Tracking";
             this.StartTrackingBtn.UseVisualStyleBackColor = true;
+            this.StartTrackingBtn.Click += new System.EventHandler(this.StartTrackingBtn_Click);
             // 
             // MainForm
             // 

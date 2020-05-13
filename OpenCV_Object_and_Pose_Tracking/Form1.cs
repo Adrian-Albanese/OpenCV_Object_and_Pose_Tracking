@@ -3,7 +3,8 @@ using System.Drawing;
 using System.Windows.Forms;
 using AForge.Video;
 using AForge.Video.DirectShow;
-
+using Emgu.CV;
+using Emgu.CV.Structure;
 
 namespace OpenCV_Object_and_Pose_Tracking
 {
@@ -211,7 +212,7 @@ namespace OpenCV_Object_and_Pose_Tracking
 
         private void ShowHideBoundsBtn_Click(object sender, EventArgs e)
         {
-            
+
             if (ShowHideBoundsBtn.Text == "Hide Bounds")
             {
                 // Hide the bounds
@@ -228,10 +229,58 @@ namespace OpenCV_Object_and_Pose_Tracking
 
             }
         }
-        
+
         private void UpdateModelSizeLbl(object sender, EventArgs e)
         {
-            ModelSizeLbl.Text = "Model Size: " + CaptureWidth.Value.ToString() + " x " + CaptureHeight.Value.ToString() + "px"; 
+            ModelSizeLbl.Text = "Model Size: " + CaptureWidth.Value.ToString() + " x " + CaptureHeight.Value.ToString() + "px";
+        }
+
+
+        private void TrackObject_NewFrame(object sender, NewFrameEventArgs eventArgs)
+        {
+
+            System.Drawing.Image SRCimage = (Bitmap)eventArgs.Frame.Clone();
+            Bitmap SRCbmpImage = new Bitmap(SRCimage);
+            Image<Bgr, byte> source = new Image<Bgr, byte>(SRCbmpImage);
+
+            System.Drawing.Image TMPimage = (Bitmap)ModelPreview.BackgroundImage;
+            Bitmap TMPbmpImage = new Bitmap(TMPimage);
+            Image<Bgr, byte> template = new Image<Bgr, byte>(TMPbmpImage);
+
+            Image<Gray, float> result = source.MatchTemplate(template, Emgu.CV.CvEnum.TemplateMatchingType.CcoeffNormed);
+
+            double[] minValues, maxValues;
+            Point[] minLocations, maxLocations;
+            result.MinMax(out minValues, out maxValues, out minLocations, out maxLocations);
+            if (maxValues[0] > 0.96)
+            {
+                MessageBox.Show("Found YAAA!!");
+            }
+
+            /*                              
+            var newFrame = (Bitmap)eventArgs.Frame.Clone();
+            Rectangle rect = new Rectangle((newFrame.Width / 2) - ((int)CaptureWidth.Value / 2) + (int)XOffset.Value, (newFrame.Height / 2) - ((int)CaptureHeight.Value / 2) + (int)YOffset.Value, (int)CaptureWidth.Value, (int)CaptureHeight.Value);
+            Graphics graphic = Graphics.FromImage(newFrame);
+            Pen pen = new Pen(Color.Red, 2);
+
+            graphic.DrawRectangle(pen, rect);
+
+            this.Invoke(new MethodInvoker(delegate ()
+            {
+                if (previewPanel.BackgroundImage != null)
+                {
+                    previewPanel.BackgroundImage.Dispose();
+                }
+                previewPanel.BackgroundImage = newFrame;
+            }));
+            */
+        }
+
+        private void StartTrackingBtn_Click(object sender, EventArgs e)
+        {
+            //selectedCamera.videoSource.NewFrame -= new NewFrameEventHandler(ModelPreview_NewFrame);
+            //selectedCamera.videoSource.NewFrame -= new NewFrameEventHandler(ShowBounds_NewFrame);
+            selectedCamera.videoSource.NewFrame += new NewFrameEventHandler(TrackObject_NewFrame);
         }
     }
 }

@@ -28,7 +28,7 @@ namespace OpenCV_Object_and_Pose_Tracking
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
         {
             Dispose();
-            Application.Exit();
+            Environment.Exit(0);
         }
 
         // Loads names of input devices into dropdown list
@@ -162,8 +162,9 @@ namespace OpenCV_Object_and_Pose_Tracking
         // Updates the model Preview Panel with the current model image
         private void ModelPreview_NewFrame(object sender, NewFrameEventArgs eventArgs)
         {
+            int boundsThickness = 2;
             var newFrame = (Bitmap)eventArgs.Frame.Clone();
-            Rectangle rect = new Rectangle((newFrame.Width / 2) - ((int)CaptureWidth.Value / 2) - (int)XOffset.Value, (newFrame.Height / 2) - ((int)CaptureHeight.Value / 2) - (int)YOffset.Value, (int)CaptureWidth.Value, (int)CaptureHeight.Value);
+            Rectangle rect = new Rectangle((newFrame.Width / 2) - ((int)CaptureWidth.Value / 2) - (int)XOffset.Value + boundsThickness, (newFrame.Height / 2) - ((int)CaptureHeight.Value / 2) - (int)YOffset.Value + boundsThickness, (int)CaptureWidth.Value - boundsThickness, (int)CaptureHeight.Value - boundsThickness);
             newFrame = newFrame.Clone(rect, System.Drawing.Imaging.PixelFormat.DontCare);
 
             this.Invoke(new MethodInvoker(delegate ()
@@ -235,7 +236,6 @@ namespace OpenCV_Object_and_Pose_Tracking
             ModelSizeLbl.Text = "Model Size: " + CaptureWidth.Value.ToString() + " x " + CaptureHeight.Value.ToString() + "px";
         }
 
-
         private void TrackObject_NewFrame(object sender, NewFrameEventArgs eventArgs)
         {
 
@@ -252,35 +252,87 @@ namespace OpenCV_Object_and_Pose_Tracking
             double[] minValues, maxValues;
             Point[] minLocations, maxLocations;
             result.MinMax(out minValues, out maxValues, out minLocations, out maxLocations);
-            if (maxValues[0] > 0.96)
+
+            if ((maxValues[0] * 100) >= (double)accuracyThreshold.Value)
             {
-                MessageBox.Show("Found YAAA!!");
+                Rectangle rect = new Rectangle(maxLocations[0], template.Size);
+                Graphics graphic = Graphics.FromImage(SRCimage);
+                Pen pen = new Pen(Color.Green, 2);
+
+                graphic.DrawRectangle(pen, rect);
+
+                this.Invoke(new MethodInvoker(delegate ()
+                {
+                    if (previewPanel.BackgroundImage != null)
+                    {
+                        previewPanel.BackgroundImage.Dispose();
+                    }
+
+                // Update the form with relevant data
+                previewPanel.BackgroundImage = SRCimage;
+                    dataGridView1.Rows[0].Cells[0].Value = (maxValues[0] * 100).ToString("F") + "%";
+                }));
+            }else
+
+            if ((maxValues[0] * 100) >= (double)accuracyThreshold.Value - 10)
+            {
+                Rectangle rect = new Rectangle(maxLocations[0], template.Size);
+                Graphics graphic = Graphics.FromImage(SRCimage);
+                Pen pen = new Pen(Color.Blue, 2);
+
+                graphic.DrawRectangle(pen, rect);
+
+                this.Invoke(new MethodInvoker(delegate ()
+                {
+                    if (previewPanel.BackgroundImage != null)
+                    {
+                        previewPanel.BackgroundImage.Dispose();
+                    }
+
+                    // Update the form with relevant data
+                    previewPanel.BackgroundImage = SRCimage;
+                    dataGridView1.Rows[0].Cells[0].Value = (maxValues[0] * 100).ToString("F") + "%";
+                }));
+            }
+            else
+            {
+                this.Invoke(new MethodInvoker(delegate ()
+                {
+                    if (previewPanel.BackgroundImage != null)
+                    {
+                        previewPanel.BackgroundImage.Dispose();
+                    }
+
+                    // Update the form with relevant data
+                    previewPanel.BackgroundImage = SRCimage;
+                    dataGridView1.Rows[0].Cells[0].Value = (maxValues[0] * 100).ToString("F") + "%";
+                }));
             }
 
-            /*                              
-            var newFrame = (Bitmap)eventArgs.Frame.Clone();
-            Rectangle rect = new Rectangle((newFrame.Width / 2) - ((int)CaptureWidth.Value / 2) + (int)XOffset.Value, (newFrame.Height / 2) - ((int)CaptureHeight.Value / 2) + (int)YOffset.Value, (int)CaptureWidth.Value, (int)CaptureHeight.Value);
-            Graphics graphic = Graphics.FromImage(newFrame);
-            Pen pen = new Pen(Color.Red, 2);
-
-            graphic.DrawRectangle(pen, rect);
-
-            this.Invoke(new MethodInvoker(delegate ()
-            {
-                if (previewPanel.BackgroundImage != null)
-                {
-                    previewPanel.BackgroundImage.Dispose();
-                }
-                previewPanel.BackgroundImage = newFrame;
-            }));
-            */
         }
 
         private void StartTrackingBtn_Click(object sender, EventArgs e)
         {
-            //selectedCamera.videoSource.NewFrame -= new NewFrameEventHandler(ModelPreview_NewFrame);
-            //selectedCamera.videoSource.NewFrame -= new NewFrameEventHandler(ShowBounds_NewFrame);
-            selectedCamera.videoSource.NewFrame += new NewFrameEventHandler(TrackObject_NewFrame);
+            switch (StartTrackingBtn.Text)
+            {
+                case "Start Tracking":
+                    // Start tracking button clicked
+                    StartTrackingBtn.ForeColor = Color.Red;
+                    StartTrackingBtn.Text = "Stop Tracking";
+                    previewPanel.VideoSource = null;
+                    previewPanel.BackgroundImage = null;
+                    selectedCamera.videoSource.NewFrame -= new NewFrameEventHandler(ShowBounds_NewFrame);
+                    selectedCamera.videoSource.NewFrame += new NewFrameEventHandler(TrackObject_NewFrame);
+                    break;
+                case "Stop Tracking":
+                    // Stop tracking button clicked
+                    StartTrackingBtn.ForeColor = Color.Black;
+                    StartTrackingBtn.Text = "Start Tracking";
+                    previewPanel.VideoSource = selectedCamera.videoSource;
+                    selectedCamera.videoSource.NewFrame -= new NewFrameEventHandler(TrackObject_NewFrame);
+                    break;
+            }
+
         }
     }
 }

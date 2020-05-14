@@ -53,15 +53,28 @@
             this.CaptureModelBtn = new System.Windows.Forms.Button();
             this.ShowHideBoundsBtn = new System.Windows.Forms.Button();
             this.groupBox6 = new System.Windows.Forms.GroupBox();
+            this.dataGridView1 = new System.Windows.Forms.DataGridView();
+            this.Accuracy = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.X_Pos = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Y_Pos = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Angle = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Scale = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.StartTrackingBtn = new System.Windows.Forms.Button();
+            this.label2 = new System.Windows.Forms.Label();
+            this.accuracyThreshold = new System.Windows.Forms.NumericUpDown();
+            this.label7 = new System.Windows.Forms.Label();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
+            this.groupBox.SuspendLayout();
             this.groupBox5.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.XOffset)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.YOffset)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.CaptureWidth)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.CaptureHeight)).BeginInit();
+            this.groupBox6.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.accuracyThreshold)).BeginInit();
             this.SuspendLayout();
             // 
             // groupBox1
@@ -179,7 +192,7 @@
             // 
             // ModelPreview
             // 
-            this.ModelPreview.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.ModelPreview.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
             this.ModelPreview.Location = new System.Drawing.Point(6, 27);
             this.ModelPreview.Name = "ModelPreview";
             this.ModelPreview.Size = new System.Drawing.Size(341, 197);
@@ -189,6 +202,9 @@
             // 
             // groupBox
             // 
+            this.groupBox.Controls.Add(this.label7);
+            this.groupBox.Controls.Add(this.accuracyThreshold);
+            this.groupBox.Controls.Add(this.label2);
             this.groupBox.Location = new System.Drawing.Point(971, 284);
             this.groupBox.Name = "groupBox";
             this.groupBox.Size = new System.Drawing.Size(353, 356);
@@ -343,12 +359,53 @@
             // 
             // groupBox6
             // 
+            this.groupBox6.Controls.Add(this.dataGridView1);
             this.groupBox6.Location = new System.Drawing.Point(298, 461);
             this.groupBox6.Name = "groupBox6";
-            this.groupBox6.Size = new System.Drawing.Size(667, 99);
+            this.groupBox6.Size = new System.Drawing.Size(667, 112);
             this.groupBox6.TabIndex = 6;
             this.groupBox6.TabStop = false;
             this.groupBox6.Text = "Calculated Transformation";
+            // 
+            // dataGridView1
+            // 
+            this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dataGridView1.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
+            this.Accuracy,
+            this.X_Pos,
+            this.Y_Pos,
+            this.Angle,
+            this.Scale});
+            this.dataGridView1.Location = new System.Drawing.Point(6, 21);
+            this.dataGridView1.Name = "dataGridView1";
+            this.dataGridView1.RowTemplate.Height = 24;
+            this.dataGridView1.Size = new System.Drawing.Size(655, 85);
+            this.dataGridView1.TabIndex = 2;
+            // 
+            // Accuracy
+            // 
+            this.Accuracy.HeaderText = "Accuracy";
+            this.Accuracy.Name = "Accuracy";
+            // 
+            // X_Pos
+            // 
+            this.X_Pos.HeaderText = "X Pos";
+            this.X_Pos.Name = "X_Pos";
+            // 
+            // Y_Pos
+            // 
+            this.Y_Pos.HeaderText = "Y Pos";
+            this.Y_Pos.Name = "Y_Pos";
+            // 
+            // Angle
+            // 
+            this.Angle.HeaderText = "Angle";
+            this.Angle.Name = "Angle";
+            // 
+            // Scale
+            // 
+            this.Scale.HeaderText = "Scale";
+            this.Scale.Name = "Scale";
             // 
             // StartTrackingBtn
             // 
@@ -359,6 +416,36 @@
             this.StartTrackingBtn.Text = "Start Tracking";
             this.StartTrackingBtn.UseVisualStyleBackColor = true;
             this.StartTrackingBtn.Click += new System.EventHandler(this.StartTrackingBtn_Click);
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(6, 37);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(138, 17);
+            this.label2.TabIndex = 8;
+            this.label2.Text = "Accuracy Threshold:";
+            // 
+            // accuracyThreshold
+            // 
+            this.accuracyThreshold.Location = new System.Drawing.Point(164, 35);
+            this.accuracyThreshold.Name = "accuracyThreshold";
+            this.accuracyThreshold.Size = new System.Drawing.Size(61, 22);
+            this.accuracyThreshold.TabIndex = 9;
+            this.accuracyThreshold.Value = new decimal(new int[] {
+            80,
+            0,
+            0,
+            0});
+            // 
+            // label7
+            // 
+            this.label7.AutoSize = true;
+            this.label7.Location = new System.Drawing.Point(231, 37);
+            this.label7.Name = "label7";
+            this.label7.Size = new System.Drawing.Size(20, 17);
+            this.label7.TabIndex = 10;
+            this.label7.Text = "%";
             // 
             // MainForm
             // 
@@ -385,12 +472,17 @@
             this.groupBox2.ResumeLayout(false);
             this.groupBox3.ResumeLayout(false);
             this.groupBox3.PerformLayout();
+            this.groupBox.ResumeLayout(false);
+            this.groupBox.PerformLayout();
             this.groupBox5.ResumeLayout(false);
             this.groupBox5.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.XOffset)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.YOffset)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.CaptureWidth)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.CaptureHeight)).EndInit();
+            this.groupBox6.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.accuracyThreshold)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -423,6 +515,15 @@
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.GroupBox groupBox6;
         private System.Windows.Forms.Button StartTrackingBtn;
+        private System.Windows.Forms.DataGridView dataGridView1;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Accuracy;
+        private System.Windows.Forms.DataGridViewTextBoxColumn X_Pos;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Y_Pos;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Angle;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Scale;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Label label7;
+        private System.Windows.Forms.NumericUpDown accuracyThreshold;
     }
 }
 

@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Drawing;
+using System.Threading;
 using System.Windows.Forms;
 using AForge.Video;
 using AForge.Video.DirectShow;
 using Emgu.CV;
 using Emgu.CV.Structure;
+using Emgu.CV.Util;
 
 namespace OpenCV_Object_and_Pose_Tracking
 {
@@ -12,6 +14,8 @@ namespace OpenCV_Object_and_Pose_Tracking
     {
         SelectedCamera selectedCamera = new SelectedCamera();
         FilterInfoCollection videoDevices = new FilterInfoCollection(FilterCategory.VideoInputDevice);
+        string previewPanelImg;
+        string modelPanelImg;
 
         public MainForm()
         {
@@ -238,7 +242,35 @@ namespace OpenCV_Object_and_Pose_Tracking
 
         private void TrackObject_NewFrame(object sender, NewFrameEventArgs eventArgs)
         {
+            long matchTime = 0;
+            float X_center, Y_center;
+            float theta;
+            Image<Gray, byte> modelImg;
+            Image<Gray, byte> observedImg;
+            //VectorOfKeyPoint modelKeyPoints = new VectorOfKeyPoint(), observedKeyPoints = new VectorOfKeyPoint();
+            //VectorOfVectorOfDMatch matches = new VectorOfVectorOfDMatch();
+            //Mat mask = new Mat(), homography = new Mat();
 
+            modelImg = new Image<Gray, byte>((Bitmap)ModelPreview.BackgroundImage);
+            observedImg = new Image<Gray, byte>((Bitmap)eventArgs.Frame.Clone());
+
+
+            Mat result = SURFFeatureExample.DrawMatches.Draw(modelImg.Mat, observedImg.Mat, out matchTime, out X_center, out Y_center, out theta);
+            previewPanel.BackgroundImage = (Bitmap)result.Bitmap;
+
+            this.Invoke(new MethodInvoker(delegate ()
+            {
+                if (previewPanel.BackgroundImage != null)
+                {
+                    dataGridView1.Rows[0].Cells[0].Value = matchTime.ToString("F") + "ms";
+                    dataGridView1.Rows[0].Cells[1].Value = X_center.ToString();
+                    dataGridView1.Rows[0].Cells[2].Value = Y_center.ToString();
+                    dataGridView1.Rows[0].Cells[3].Value = theta.ToString();
+                }
+            }));
+            selectedCamera.videoSource.NewFrame -= new NewFrameEventHandler(TrackObject_NewFrame);
+
+            /*
             System.Drawing.Image SRCimage = (Bitmap)eventArgs.Frame.Clone();
             Bitmap SRCbmpImage = new Bitmap(SRCimage);
             Image<Bgr, byte> source = new Image<Bgr, byte>(SRCbmpImage);
@@ -308,7 +340,34 @@ namespace OpenCV_Object_and_Pose_Tracking
                     dataGridView1.Rows[0].Cells[0].Value = (maxValues[0] * 100).ToString("F") + "%";
                 }));
             }
+            */
+        }
 
+        public void trackImgs()
+        {
+            long matchTime = 0;
+            float X_center, Y_center;
+            float theta;
+            Image<Gray, byte> modelImg;
+            Image<Gray, byte> observedImg;
+            
+            modelImg = new Image<Gray, byte>((Bitmap)Image.FromFile(modelPanelImg));
+            observedImg = new Image<Gray, byte>((Bitmap)Image.FromFile(previewPanelImg));
+
+
+            Mat result = SURFFeatureExample.DrawMatches.Draw(modelImg.Mat, observedImg.Mat, out matchTime, out X_center, out Y_center, out theta);
+            previewPanel.BackgroundImage = (Bitmap)result.Bitmap;
+
+            this.Invoke(new MethodInvoker(delegate ()
+            {
+                if (previewPanel.BackgroundImage != null)
+                {
+                    dataGridView1.Rows[0].Cells[0].Value = matchTime.ToString("F") + "ms";
+                    dataGridView1.Rows[0].Cells[1].Value = X_center.ToString();
+                    dataGridView1.Rows[0].Cells[2].Value = Y_center.ToString();
+                    dataGridView1.Rows[0].Cells[3].Value = theta.ToString();
+                }
+            }));
         }
 
         private void StartTrackingBtn_Click(object sender, EventArgs e)
@@ -320,19 +379,51 @@ namespace OpenCV_Object_and_Pose_Tracking
                     StartTrackingBtn.ForeColor = Color.Red;
                     StartTrackingBtn.Text = "Stop Tracking";
                     previewPanel.VideoSource = null;
-                    previewPanel.BackgroundImage = null;
-                    selectedCamera.videoSource.NewFrame -= new NewFrameEventHandler(ShowBounds_NewFrame);
-                    selectedCamera.videoSource.NewFrame += new NewFrameEventHandler(TrackObject_NewFrame);
+                    //previewPanel.BackgroundImage = null;
+                    if (selectedCamera.videoSource != null)
+                    {
+                        selectedCamera.videoSource.NewFrame -= new NewFrameEventHandler(ShowBounds_NewFrame);
+                        selectedCamera.videoSource.NewFrame += new NewFrameEventHandler(TrackObject_NewFrame);
+                    }
+                    else
+                    {
+                        trackImgs();
+                    }
+
                     break;
                 case "Stop Tracking":
                     // Stop tracking button clicked
                     StartTrackingBtn.ForeColor = Color.Black;
                     StartTrackingBtn.Text = "Start Tracking";
                     previewPanel.VideoSource = selectedCamera.videoSource;
-                    selectedCamera.videoSource.NewFrame -= new NewFrameEventHandler(TrackObject_NewFrame);
+                    if (selectedCamera.videoSource != null)
+                    {
+                        selectedCamera.videoSource.NewFrame -= new NewFrameEventHandler(TrackObject_NewFrame);
+                    }
                     break;
             }
 
+        }
+
+        private void OpenModel_Click(object sender, EventArgs e)
+        {
+            if (openFileDialog1.ShowDialog() == DialogResult.OK)
+            {
+
+                ModelPreview.BackgroundImage = Image.FromFile(openFileDialog1.FileName);
+                modelPanelImg = openFileDialog1.FileName;
+
+            }
+        }
+
+        private void LoadCamImg_Click(object sender, EventArgs e)
+        {
+            if (openFileDialog1.ShowDialog() == DialogResult.OK)
+            {
+
+                previewPanel.BackgroundImage = Image.FromFile(openFileDialog1.FileName);
+                previewPanelImg = openFileDialog1.FileName;
+            }
         }
     }
 }

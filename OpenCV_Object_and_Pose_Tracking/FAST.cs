@@ -1,79 +1,198 @@
-﻿using Emgu.CV;
+﻿using System;
+using System.Diagnostics;
+using System.Drawing;
+using Emgu.CV;
+using Emgu.CV.CvEnum;
 using Emgu.CV.Features2D;
 using Emgu.CV.Structure;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Emgu.CV.Util;
+using System.Windows.Forms;
+#if !__IOS__
+using Emgu.CV.Cuda;
+#endif
+using Emgu.CV.XFeatures2D;
 
-namespace OpenCV_Object_and_Pose_Tracking
+namespace SURFFeatureExample
 {
-    class FAST
+    public static class DrawMatches
     {
-        public static Image<Bgr, Byte> Draw(Image<Gray, Byte> modelImage, Image<Gray, byte> observedImage)
+        public static void FindMatch(Mat modelImage, Mat observedImage, out long matchTime, out VectorOfKeyPoint modelKeyPoints, out VectorOfKeyPoint observedKeyPoints, VectorOfVectorOfDMatch matches, out Mat mask, out Mat homography)
         {
-            HomographyMatrix homography = null;
-
-            FastDetector fastCPU = new FastDetector(10, true);
-            VectorOfKeyPoint modelKeyPoints;
-            VectorOfKeyPoint observedKeyPoints;
-            Matrix<int> indices;
-
-            BriefDescriptorExtractor descriptor = new BriefDescriptorExtractor();
-
-            Matrix<byte> mask;
             int k = 2;
             double uniquenessThreshold = 0.8;
+            double hessianThresh = 300;
 
-            //extract features from the object image
-            modelKeyPoints = fastCPU.DetectKeyPointsRaw(modelImage, null);
-            Matrix<Byte> modelDescriptors = descriptor.ComputeDescriptorsRaw(modelImage, null, modelKeyPoints);
+            Stopwatch watch;
+            homography = null;
 
-            // extract features from the observed image
-            observedKeyPoints = fastCPU.DetectKeyPointsRaw(observedImage, null);
-            Matrix<Byte> observedDescriptors = descriptor.ComputeDescriptorsRaw(observedImage, null, observedKeyPoints);
-            BruteForceMatcher<Byte> matcher = new BruteForceMatcher<Byte>(DistanceType.L2);
-            matcher.Add(modelDescriptors);
+            modelKeyPoints = new VectorOfKeyPoint();
+            observedKeyPoints = new VectorOfKeyPoint();
 
-            indices = new Matrix<int>(observedDescriptors.Rows, k);
-            using (Matrix<float> dist = new Matrix<float>(observedDescriptors.Rows, k))
+#if !__IOS__
+            if (CudaInvoke.HasCuda)
             {
-                matcher.KnnMatch(observedDescriptors, indices, dist, k, null);
-                mask = new Matrix<byte>(dist.Rows, 1);
-                mask.SetValue(255);
-                Features2DToolbox.VoteForUniqueness(dist, uniquenessThreshold, mask);
-            }
+                CudaSURF surfCuda = new CudaSURF((float)hessianThresh);
+                using (GpuMat gpuModelImage = new GpuMat(modelImage))
+                //extract features from the object image
+                using (GpuMat gpuModelKeyPoints = surfCuda.DetectKeyPointsRaw(gpuModelImage, null))
+                using (GpuMat gpuModelDescriptors = surfCuda.ComputeDescriptorsRaw(gpuModelImage, null, gpuModelKeyPoints))
+                using (CudaBFMatcher matcher = new CudaBFMatcher(DistanceType.L2))
+                {
+                    surfCuda.DownloadKeypoints(gpuModelKeyPoints, modelKeyPoints);
+                    watch = Stopwatch.StartNew();
 
-            int nonZeroCount = CvInvoke.cvCountNonZero(mask);
-            if (nonZeroCount >= 4)
+                    // extract features from the observed image
+                    using (GpuMat gpuObservedImage = new GpuMat(observedImage))
+                    using (GpuMat gpuObservedKeyPoints = surfCuda.DetectKeyPointsRaw(gpuObservedImage, null))
+                    using (GpuMat gpuObservedDescriptors = surfCuda.ComputeDescriptorsRaw(gpuObservedImage, null, gpuObservedKeyPoints))
+                    //using (GpuMat tmp = new GpuMat())
+                    //using (Stream stream = new Stream())
+                    {
+                        matcher.KnnMatch(gpuObservedDescriptors, gpuModelDescriptors, matches, k);
+
+                        surfCuda.DownloadKeypoints(gpuObservedKeyPoints, observedKeyPoints);
+
+                        mask = new Mat(matches.Size, 1, DepthType.Cv8U, 1);
+                        mask.SetTo(new MCvScalar(255));
+                        Features2DToolbox.VoteForUniqueness(matches, uniquenessThreshold, mask);
+
+                        int nonZeroCount = CvInvoke.CountNonZero(mask);
+                        if (nonZeroCount >= 4)
+                        {
+                            nonZeroCount = Features2DToolbox.VoteForSizeAndOrientation(modelKeyPoints, observedKeyPoints,
+                               matches, mask, 1.5, 20);
+                            if (nonZeroCount >= 4)
+                                homography = Features2DToolbox.GetHomographyMatrixFromMatchedFeatures(modelKeyPoints,
+                                   observedKeyPoints, matches, mask, 2);
+                        }
+                    }
+                    watch.Stop();
+                }
+            }
+            else
+#endif
             {
-                nonZeroCount = Features2DToolbox.VoteForSizeAndOrientation(modelKeyPoints, observedKeyPoints, indices, mask, 1.5, 20);
-                if (nonZeroCount >= 4)
-                    homography = Features2DToolbox.GetHomographyMatrixFromMatchedFeatures(
-                    modelKeyPoints, observedKeyPoints, indices, mask, 2);
+                using (UMat uModelImage = modelImage.ToUMat(AccessType.Read))
+                using (UMat uObservedImage = observedImage.ToUMat(AccessType.Read))
+                {
+                    SURF surfCPU = new SURF(hessianThresh);
+                    //SIFT surfCPU = new SIFT((int)hessianThresh);
+                    //extract features from the object image
+                    UMat modelDescriptors = new UMat();
+                    surfCPU.DetectAndCompute(uModelImage, null, modelKeyPoints, modelDescriptors, false);
+
+                    watch = Stopwatch.StartNew();
+
+                    // extract features from the observed image
+                    UMat observedDescriptors = new UMat();
+                    surfCPU.DetectAndCompute(uObservedImage, null, observedKeyPoints, observedDescriptors, false);
+                    BFMatcher matcher = new BFMatcher(DistanceType.L2);
+                    matcher.Add(modelDescriptors);
+
+                    matcher.KnnMatch(observedDescriptors, matches, k, null);
+                    mask = new Mat(matches.Size, 1, DepthType.Cv8U, 1);
+                    mask.SetTo(new MCvScalar(255));
+                    Features2DToolbox.VoteForUniqueness(matches, uniquenessThreshold, mask);
+
+                    int nonZeroCount = CvInvoke.CountNonZero(mask);
+                    if (nonZeroCount >= 4)
+                    {
+                        nonZeroCount = Features2DToolbox.VoteForSizeAndOrientation(modelKeyPoints, observedKeyPoints,
+                           matches, mask, 1.5, 20);
+                        if (nonZeroCount >= 4)
+                            homography = Features2DToolbox.GetHomographyMatrixFromMatchedFeatures(modelKeyPoints,
+                               observedKeyPoints, matches, mask, 2);
+                    }
+
+                    watch.Stop();
+                }
             }
+            matchTime = watch.ElapsedMilliseconds;
+        }
 
-            //Draw the matched keypoints
-            Image<Bgr, Byte> result = Features2DToolbox.DrawMatches(modelImage, modelKeyPoints, observedImage, observedKeyPoints,
-               indices, new Bgr(255, 255, 255), new Bgr(255, 255, 255), mask, Features2DToolbox.KeypointDrawType.DEFAULT);
+        /// <summary>
+        /// Draw the model image and observed image, the matched features and homography projection.
+        /// </summary>
+        /// <param name="modelImage">The model image</param>
+        /// <param name="observedImage">The observed image</param>
+        /// <param name="matchTime">The output total time for computing the homography matrix.</param>
+        /// <returns>The model image and observed image, the matched features and homography projection.</returns>
+        public static Mat Draw(Mat modelImage, Mat observedImage, out long matchTime, out float X_center, out float Y_center, out float theta)
+        {
+            Mat homography;
+            VectorOfKeyPoint modelKeyPoints;
+            VectorOfKeyPoint observedKeyPoints;
+            X_center = 0;
+            Y_center = 0;
+            theta = 0;
+            using (VectorOfVectorOfDMatch matches = new VectorOfVectorOfDMatch())
+            {
+                Mat mask;
+                FindMatch(modelImage, observedImage, out matchTime, out modelKeyPoints, out observedKeyPoints, matches,
+                   out mask, out homography);
 
-            #region draw the projected region on the image
-            if (homography != null)
-            {  //draw a rectangle along the projected model
-                Rectangle rect = modelImage.ROI;
-                PointF[] pts = new PointF[] {
-           new PointF(rect.Left, rect.Bottom),
-           new PointF(rect.Right, rect.Bottom),
-           new PointF(rect.Right, rect.Top),
-           new PointF(rect.Left, rect.Top)};
-                homography.ProjectPoints(pts);
+                //Draw the matched keypoints
+                Mat result = new Mat();
+                Features2DToolbox.DrawMatches(modelImage, modelKeyPoints, observedImage, observedKeyPoints,
+                   matches, result, new MCvScalar(255, 0, 0), new MCvScalar(255, 0, 0), mask);
 
-                result.DrawPolyline(Array.ConvertAll<PointF, Point>(pts, Point.Round), true, new Bgr(Color.Red), 5);
+                #region draw the projected region on the image
+
+                if (homography != null)
+                {
+
+                    //draw a rectangle along the projected model
+                    Rectangle rect = new Rectangle(Point.Empty, modelImage.Size);
+                    PointF[] pts = new PointF[]
+                    {
+                  new PointF(rect.Left, rect.Bottom),
+                  new PointF(rect.Right, rect.Bottom),
+                  new PointF(rect.Right, rect.Top),
+                  new PointF(rect.Left, rect.Top)
+                    };
+                    pts = CvInvoke.PerspectiveTransform(pts, homography);
+
+                    Console.WriteLine("Left top " + pts[3]);
+                    Console.WriteLine("Right top " + pts[2]);
+                    Console.WriteLine("Right bottom " + pts[1]);
+                    Console.WriteLine("Left bottom " + pts[0]);
+
+                    // Creates box around object
+                    Point[] points = Array.ConvertAll<PointF, Point>(pts, Point.Round);
+                    using (VectorOfPoint vp = new VectorOfPoint(points))
+                    {
+                        CvInvoke.Polylines(result, vp, true, new MCvScalar(255, 0, 0, 255), 5);
+                    }
+
+                    RotatedRect IdentifiedImage = CvInvoke.MinAreaRect(pts);
+                    theta = IdentifiedImage.Angle;
+                    X_center = IdentifiedImage.Center.X;
+                    Y_center = IdentifiedImage.Center.Y;
+
+                    // Draws an arrow on observed image
+                    PointF[] arrowpts = new PointF[]
+                    {
+                        new PointF(X_center, Y_center), // Center point
+                        new PointF(X_center, Y_center + 10),
+                        new PointF(X_center, Y_center - 10),
+                        new PointF(X_center, Y_center),
+                        new PointF(X_center + 10, Y_center),
+                        new PointF(X_center - 10, Y_center)
+                    };
+
+                    Point[] arrowpoints = Array.ConvertAll<PointF, Point>(arrowpts, Point.Round);
+                    using (VectorOfPoint vps = new VectorOfPoint(arrowpoints))
+                    {
+                        CvInvoke.Polylines(result, vps, true, new MCvScalar(0, 0, 255, 255), 2);
+                    }
+
+                }
+
+                #endregion
+
+                return result;
+
             }
-            #endregion
-
-            return result;
         }
     }
 }

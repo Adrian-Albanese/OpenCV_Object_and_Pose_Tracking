@@ -34,6 +34,7 @@
             this.InputDeviceList = new System.Windows.Forms.ComboBox();
             this.ConnectBtn = new System.Windows.Forms.Button();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.LoadCamImg = new System.Windows.Forms.Button();
             this.RunStopBtn = new System.Windows.Forms.Button();
             this.SingleShotBtn = new System.Windows.Forms.Button();
             this.previewPanel = new AForge.Controls.VideoSourcePlayer();
@@ -41,7 +42,11 @@
             this.ModelSizeLbl = new System.Windows.Forms.Label();
             this.ModelPreview = new AForge.Controls.VideoSourcePlayer();
             this.groupBox = new System.Windows.Forms.GroupBox();
+            this.label7 = new System.Windows.Forms.Label();
+            this.accuracyThreshold = new System.Windows.Forms.NumericUpDown();
+            this.label2 = new System.Windows.Forms.Label();
             this.groupBox5 = new System.Windows.Forms.GroupBox();
+            this.OpenModel = new System.Windows.Forms.Button();
             this.XOffset = new System.Windows.Forms.NumericUpDown();
             this.YOffset = new System.Windows.Forms.NumericUpDown();
             this.label5 = new System.Windows.Forms.Label();
@@ -54,19 +59,18 @@
             this.ShowHideBoundsBtn = new System.Windows.Forms.Button();
             this.groupBox6 = new System.Windows.Forms.GroupBox();
             this.dataGridView1 = new System.Windows.Forms.DataGridView();
-            this.Accuracy = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.ProcessTime = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.X_Pos = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Y_Pos = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Angle = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Scale = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.StartTrackingBtn = new System.Windows.Forms.Button();
-            this.label2 = new System.Windows.Forms.Label();
-            this.accuracyThreshold = new System.Windows.Forms.NumericUpDown();
-            this.label7 = new System.Windows.Forms.Label();
+            this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
             this.groupBox.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.accuracyThreshold)).BeginInit();
             this.groupBox5.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.XOffset)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.YOffset)).BeginInit();
@@ -74,7 +78,6 @@
             ((System.ComponentModel.ISupportInitialize)(this.CaptureHeight)).BeginInit();
             this.groupBox6.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.accuracyThreshold)).BeginInit();
             this.SuspendLayout();
             // 
             // groupBox1
@@ -131,6 +134,7 @@
             // 
             // groupBox2
             // 
+            this.groupBox2.Controls.Add(this.LoadCamImg);
             this.groupBox2.Controls.Add(this.RunStopBtn);
             this.groupBox2.Controls.Add(this.SingleShotBtn);
             this.groupBox2.Location = new System.Drawing.Point(12, 148);
@@ -140,9 +144,19 @@
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Camera Controls";
             // 
+            // LoadCamImg
+            // 
+            this.LoadCamImg.Location = new System.Drawing.Point(181, 90);
+            this.LoadCamImg.Name = "LoadCamImg";
+            this.LoadCamImg.Size = new System.Drawing.Size(78, 40);
+            this.LoadCamImg.TabIndex = 10;
+            this.LoadCamImg.Text = "Open";
+            this.LoadCamImg.UseVisualStyleBackColor = true;
+            this.LoadCamImg.Click += new System.EventHandler(this.LoadCamImg_Click);
+            // 
             // RunStopBtn
             // 
-            this.RunStopBtn.Location = new System.Drawing.Point(70, 90);
+            this.RunStopBtn.Location = new System.Drawing.Point(30, 90);
             this.RunStopBtn.Name = "RunStopBtn";
             this.RunStopBtn.Size = new System.Drawing.Size(120, 40);
             this.RunStopBtn.TabIndex = 1;
@@ -152,7 +166,7 @@
             // 
             // SingleShotBtn
             // 
-            this.SingleShotBtn.Location = new System.Drawing.Point(70, 35);
+            this.SingleShotBtn.Location = new System.Drawing.Point(30, 44);
             this.SingleShotBtn.Name = "SingleShotBtn";
             this.SingleShotBtn.Size = new System.Drawing.Size(120, 40);
             this.SingleShotBtn.TabIndex = 0;
@@ -162,7 +176,7 @@
             // 
             // previewPanel
             // 
-            this.previewPanel.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.previewPanel.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
             this.previewPanel.Location = new System.Drawing.Point(298, 12);
             this.previewPanel.Name = "previewPanel";
             this.previewPanel.Size = new System.Drawing.Size(667, 437);
@@ -212,8 +226,39 @@
             this.groupBox.TabStop = false;
             this.groupBox.Text = "Object Matching Settings";
             // 
+            // label7
+            // 
+            this.label7.AutoSize = true;
+            this.label7.Location = new System.Drawing.Point(231, 37);
+            this.label7.Name = "label7";
+            this.label7.Size = new System.Drawing.Size(20, 17);
+            this.label7.TabIndex = 10;
+            this.label7.Text = "%";
+            // 
+            // accuracyThreshold
+            // 
+            this.accuracyThreshold.Location = new System.Drawing.Point(164, 35);
+            this.accuracyThreshold.Name = "accuracyThreshold";
+            this.accuracyThreshold.Size = new System.Drawing.Size(61, 22);
+            this.accuracyThreshold.TabIndex = 9;
+            this.accuracyThreshold.Value = new decimal(new int[] {
+            80,
+            0,
+            0,
+            0});
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(6, 37);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(138, 17);
+            this.label2.TabIndex = 8;
+            this.label2.Text = "Accuracy Threshold:";
+            // 
             // groupBox5
             // 
+            this.groupBox5.Controls.Add(this.OpenModel);
             this.groupBox5.Controls.Add(this.XOffset);
             this.groupBox5.Controls.Add(this.YOffset);
             this.groupBox5.Controls.Add(this.label5);
@@ -230,6 +275,16 @@
             this.groupBox5.TabIndex = 5;
             this.groupBox5.TabStop = false;
             this.groupBox5.Text = "Model Capture";
+            // 
+            // OpenModel
+            // 
+            this.OpenModel.Location = new System.Drawing.Point(181, 85);
+            this.OpenModel.Name = "OpenModel";
+            this.OpenModel.Size = new System.Drawing.Size(78, 40);
+            this.OpenModel.TabIndex = 8;
+            this.OpenModel.Text = "Open";
+            this.OpenModel.UseVisualStyleBackColor = true;
+            this.OpenModel.Click += new System.EventHandler(this.OpenModel_Click);
             // 
             // XOffset
             // 
@@ -339,7 +394,7 @@
             // 
             // CaptureModelBtn
             // 
-            this.CaptureModelBtn.Location = new System.Drawing.Point(70, 85);
+            this.CaptureModelBtn.Location = new System.Drawing.Point(30, 85);
             this.CaptureModelBtn.Name = "CaptureModelBtn";
             this.CaptureModelBtn.Size = new System.Drawing.Size(120, 40);
             this.CaptureModelBtn.TabIndex = 1;
@@ -349,7 +404,7 @@
             // 
             // ShowHideBoundsBtn
             // 
-            this.ShowHideBoundsBtn.Location = new System.Drawing.Point(70, 30);
+            this.ShowHideBoundsBtn.Location = new System.Drawing.Point(30, 39);
             this.ShowHideBoundsBtn.Name = "ShowHideBoundsBtn";
             this.ShowHideBoundsBtn.Size = new System.Drawing.Size(120, 40);
             this.ShowHideBoundsBtn.TabIndex = 0;
@@ -371,7 +426,7 @@
             // 
             this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dataGridView1.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
-            this.Accuracy,
+            this.ProcessTime,
             this.X_Pos,
             this.Y_Pos,
             this.Angle,
@@ -382,10 +437,10 @@
             this.dataGridView1.Size = new System.Drawing.Size(655, 85);
             this.dataGridView1.TabIndex = 2;
             // 
-            // Accuracy
+            // ProcessTime
             // 
-            this.Accuracy.HeaderText = "Accuracy";
-            this.Accuracy.Name = "Accuracy";
+            this.ProcessTime.HeaderText = "Time(ms)";
+            this.ProcessTime.Name = "ProcessTime";
             // 
             // X_Pos
             // 
@@ -417,35 +472,9 @@
             this.StartTrackingBtn.UseVisualStyleBackColor = true;
             this.StartTrackingBtn.Click += new System.EventHandler(this.StartTrackingBtn_Click);
             // 
-            // label2
+            // openFileDialog1
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(6, 37);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(138, 17);
-            this.label2.TabIndex = 8;
-            this.label2.Text = "Accuracy Threshold:";
-            // 
-            // accuracyThreshold
-            // 
-            this.accuracyThreshold.Location = new System.Drawing.Point(164, 35);
-            this.accuracyThreshold.Name = "accuracyThreshold";
-            this.accuracyThreshold.Size = new System.Drawing.Size(61, 22);
-            this.accuracyThreshold.TabIndex = 9;
-            this.accuracyThreshold.Value = new decimal(new int[] {
-            80,
-            0,
-            0,
-            0});
-            // 
-            // label7
-            // 
-            this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(231, 37);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(20, 17);
-            this.label7.TabIndex = 10;
-            this.label7.Text = "%";
+            this.openFileDialog1.FileName = "openFileDialog1";
             // 
             // MainForm
             // 
@@ -474,6 +503,7 @@
             this.groupBox3.PerformLayout();
             this.groupBox.ResumeLayout(false);
             this.groupBox.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.accuracyThreshold)).EndInit();
             this.groupBox5.ResumeLayout(false);
             this.groupBox5.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.XOffset)).EndInit();
@@ -482,7 +512,6 @@
             ((System.ComponentModel.ISupportInitialize)(this.CaptureHeight)).EndInit();
             this.groupBox6.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.accuracyThreshold)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -516,14 +545,17 @@
         private System.Windows.Forms.GroupBox groupBox6;
         private System.Windows.Forms.Button StartTrackingBtn;
         private System.Windows.Forms.DataGridView dataGridView1;
-        private System.Windows.Forms.DataGridViewTextBoxColumn Accuracy;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Label label7;
+        private System.Windows.Forms.NumericUpDown accuracyThreshold;
+        private System.Windows.Forms.DataGridViewTextBoxColumn ProcessTime;
         private System.Windows.Forms.DataGridViewTextBoxColumn X_Pos;
         private System.Windows.Forms.DataGridViewTextBoxColumn Y_Pos;
         private System.Windows.Forms.DataGridViewTextBoxColumn Angle;
         private System.Windows.Forms.DataGridViewTextBoxColumn Scale;
-        private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.Label label7;
-        private System.Windows.Forms.NumericUpDown accuracyThreshold;
+        private System.Windows.Forms.Button OpenModel;
+        private System.Windows.Forms.OpenFileDialog openFileDialog1;
+        private System.Windows.Forms.Button LoadCamImg;
     }
 }
 
